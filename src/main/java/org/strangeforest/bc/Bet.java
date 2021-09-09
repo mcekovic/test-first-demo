@@ -11,19 +11,18 @@ public class Bet {
 
 	public Bet(BetType betType, BigDecimal unitStake, List<BetLeg> legs) {
 		this.betType = betType;
-		this.unitStake = unitStake;
+		this.unitStake = checkUnitStake(unitStake);
 		this.legs = legs;
 	}
 
 	public Bet(BetType betType, String unitStake, List<BetLeg> legs) {
-		this(betType, toUnitStake(unitStake), validateLegs(legs));
+		this(betType, new BigDecimal(unitStake), validateLegs(legs));
 	}
 
-	private static BigDecimal toUnitStake(String unitStake) {
-		var decimalUnitStake = new BigDecimal(unitStake);
-		if (decimalUnitStake.signum() <= 0)
+	private static BigDecimal checkUnitStake(BigDecimal unitStake) {
+		if (unitStake.signum() <= 0)
 			throw new IllegalArgumentException("Bet must have positive stake");
-		return decimalUnitStake;
+		return unitStake;
 	}
 
 	private static List<BetLeg> validateLegs(List<BetLeg> legs) {
@@ -33,9 +32,8 @@ public class Bet {
 	}
 
 	public BigDecimal calculate() {
-		var cumulativePrice = betType.combinations(legs)
-			.map(legs -> new BetUnit(legs).cumulativePrice())
+		return betType.combinations(legs)
+			.map(legs -> new BetUnit(unitStake, legs).cumulativeMaxReturn())
 			.reduce(BigDecimal.ZERO, BigDecimal::add);
-		return unitStake.multiply(cumulativePrice);
 	}
 }
